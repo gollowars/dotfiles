@@ -5,26 +5,27 @@
 
 ## tmux
 # Autostart if not already in tmux.
-if [[ ! -n $TMUX && $- == *l* ]]; then
-  # get the IDs
-  ID="`tmux list-sessions`"
-  if [[ -z "$ID" ]]; then
-    tmux new-session
+function tstart(){
+  if [[ ! -n $TMUX && $- == *l* ]]; then
+    # get the IDs
+    ID="`tmux list-sessions`"
+    if [[ -z "$ID" ]]; then
+      tmux new-session
+    fi
+    create_new_session="Create New Session"
+    ID="$ID\n${create_new_session}:"
+    ID="`echo $ID | $PERCOL | cut -d: -f1`"
+    if [[ "$ID" = "${create_new_session}" ]]; then
+      tmux new-session
+    elif [[ -n "$ID" ]]; then
+      tmux attach-session -t "$ID"
+    else
+      :  # Start terminal normally
+    fi
   fi
-  create_new_session="Create New Session"
-  ID="$ID\n${create_new_session}:"
-  ID="`echo $ID | $PERCOL | cut -d: -f1`"
-  if [[ "$ID" = "${create_new_session}" ]]; then
-    tmux new-session
-  elif [[ -n "$ID" ]]; then
-    tmux attach-session -t "$ID"
-  else
-    :  # Start terminal normally
-  fi
-fi
 
-
-
+}
+tstart
 
 ### user functions
 # fzf util for git
@@ -150,11 +151,63 @@ function seqrename(){
   rename -S '-' '_' *.png
 }
 
+function resize_images(){
+  local IMG_NAME="image2"
+  local EX="png"
+  local SIZE=640
+  if [ $1 ]; then
+    IMG_NAME=$1
+  fi
+
+  if [ $2 ]; then
+    EX=$2
+  fi
+
+  if [ $3 ]; then
+    SIZE=$3
+  fi
+
+  local ARG1=$(echo \$_= \"\$N-$IMG_NAME\")
+  local EXE1="rename -N 01 -X -e '${ARG1}' *.${EX}"
+  echo $EXE1
+  $(eval ${EXE1})
+  local EXE2="rename -S '-' '_' *.png"
+  echo $EXE2
+  $(eval ${EXE2})
+
+
+  # 2 mkdir
+  echo 'mkdir'
+  mkdir ./min
+  # 3 resize
+  local EXE3="ls | grep -E '.(jpg|png)$' | xargs -I {} ffmpeg -i {} -vf scale=${SIZE}:-1 -y min/{}"
+  echo $EXE3
+  $(eval ${EXE3})
+
+  # 4
+  local EXE4="builtin cd ./min && minimage && builtin cd ../"
+  echo $EXE4
+  $(eval ${EXE4})
+}
+
+function testecho(){
+  local NAME="test test"
+  if [ $# != 1 ]; then
+  else
+    NAME=$1
+  fi
+  echo $NAME
+}
+
 ## Python
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
+export PYENV_VIRTUALENV_DISABLE_PROMPT=1
+
 if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+
 fi
 
 
