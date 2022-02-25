@@ -4,7 +4,7 @@
 
 # export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
 
-## enhanced
+## enhancd
 source .sh-utils/enhancd/init.sh
 
 ## tmux
@@ -35,14 +35,7 @@ tstart
 # fzf util for git
 function tree_select() {
   tree -N -a --charset=o -f -I '.git|.idea|resolution-cache|target/streams|node_modules' | \
-    fzf --preview 'f() {
-      set -- $(echo -- "$@" | grep -o "\./.*$");
-      if [ -d $1 ]; then
-        ls -lh $1
-      else
-        head -n 100 $1
-      fi
-    }; f {}' | \
+    fzf | \
       sed -e "s/ ->.*\$//g" | \
       tr -d '\||`| ' | \
       tr '\n' ' ' | \
