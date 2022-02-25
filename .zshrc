@@ -1,7 +1,11 @@
 # zmodload zsh/zprof && zprof
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# export FZF_DEFAULT_OPTS="--no-sort --exact --cycle --multi --ansi --reverse --border --sync --bind=ctrl-t:toggle --bind=ctrl-k:kill-line --bind=?:toggle-preview --bind=down:preview-down --bind=up:preview-up"
 
 # export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
+
+## enhanced
+source .sh-utils/enhancd/init.sh
 
 ## tmux
 # Autostart if not already in tmux.
@@ -29,6 +33,34 @@ tstart
 
 ### user functions
 # fzf util for git
+function tree_select() {
+  tree -N -a --charset=o -f -I '.git|.idea|resolution-cache|target/streams|node_modules' | \
+    fzf --preview 'f() {
+      set -- $(echo -- "$@" | grep -o "\./.*$");
+      if [ -d $1 ]; then
+        ls -lh $1
+      else
+        head -n 100 $1
+      fi
+    }; f {}' | \
+      sed -e "s/ ->.*\$//g" | \
+      tr -d '\||`| ' | \
+      tr '\n' ' ' | \
+      sed -e "s/--//g" | \
+      xargs echo
+}
+
+# treeから選択したファイルをvimで開く
+function open_from_tree_vim(){
+  local selected_file=$(tree_select)
+  if [ -n "$selected_file" ]; then
+    BUFFER="vim $selected_file"
+  fi
+  zle accept-line
+}
+zle -N open_from_tree_vim
+bindkey "^^" open_from_tree_vim
+
 # fbr - checkout git branch
 fbr() {
   local branches branch
@@ -100,7 +132,8 @@ alias git_diff_archive=git_diff_archive
 ## fvim - vim to selected file
 
 function fvim(){
-  vim $(fzf)
+  local file=$(fzf)
+  echo $file
 }
 
 function fcd() {
@@ -152,7 +185,7 @@ function seqrename(){
 }
 
 function resize_images(){
-  local IMG_NAME="image2"
+  local IMG_NAME="image"
   local EX="png"
   local SIZE=640
   if [ $1 ]; then
@@ -189,6 +222,8 @@ function resize_images(){
   echo $EXE4
   $(eval ${EXE4})
 }
+
+
 
 function testecho(){
   local NAME="test test"
