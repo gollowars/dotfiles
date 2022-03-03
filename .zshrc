@@ -1,3 +1,6 @@
+autoload -Uz compinit
+compinit
+
 # zmodload zsh/zprof && zprof
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # export FZF_DEFAULT_OPTS="--no-sort --exact --cycle --multi --ansi --reverse --border --sync --bind=ctrl-t:toggle --bind=ctrl-k:kill-line --bind=?:toggle-preview --bind=down:preview-down --bind=up:preview-up"
@@ -44,15 +47,15 @@ function tree_select() {
 }
 
 # treeから選択したファイルをvimで開く
-function open_from_tree_vim(){
+function ftree_vim(){
   local selected_file=$(tree_select)
   if [ -n "$selected_file" ]; then
     BUFFER="vim $selected_file"
   fi
   zle accept-line
 }
-zle -N open_from_tree_vim
-bindkey "^^" open_from_tree_vim
+zle -N ftree_vim
+bindkey "^^" ftree_vim
 
 # fbr - checkout git branch
 fbr() {
@@ -123,11 +126,14 @@ alias git_diff_archive=git_diff_archive
 
 
 ## fvim - vim to selected file
-
 function fvim(){
   local file=$(fzf)
-  echo $file
+  if [ $file ]; then
+    vim $file
+  fi
+  zle accept-line
 }
+zle -N fvim
 
 function fcd() {
     if [[ "$#" != 0 ]]; then
@@ -177,28 +183,28 @@ function seqrename(){
   rename -S '-' '_' *.png
 }
 
+function to_gifs(){
+  ls | grep -E ".(mov)$" | sed 's/\..*//' | xargs -I {} ffmpeg -i {}.mov -vf scale=800:-1 -y  -r 5 {}.gif
+}
+
 function resize_images(){
-  local IMG_NAME="image"
   local EX="png"
-  local SIZE=640
+  local SIZE=1000
+  
   if [ $1 ]; then
-    IMG_NAME=$1
+    EX=$1
   fi
 
   if [ $2 ]; then
-    EX=$2
+    SIZE=$2
   fi
 
-  if [ $3 ]; then
-    SIZE=$3
-  fi
-
-  local ARG1=$(echo \$_= \"\$N-$IMG_NAME\")
-  local EXE1="rename -N 01 -X -e '${ARG1}' *.${EX}"
-  echo $EXE1
-  $(eval ${EXE1})
-  local EXE2="rename -S '-' '_' *.png"
-  echo $EXE2
+  # local ARG1=$(echo \$_= \"\$N-$IMG_NAME\")
+  # local EXE1="rename -N 01 -X -e '${ARG1}' *.${EX}"
+  # echo $EXE1
+  # $(eval ${EXE1})
+  # local EXE2="rename -S '-' '_' *.${EX}"
+  # echo $EXE2
   $(eval ${EXE2})
 
 
@@ -206,7 +212,7 @@ function resize_images(){
   echo 'mkdir'
   mkdir ./min
   # 3 resize
-  local EXE3="ls | grep -E '.(jpg|png)$' | xargs -I {} ffmpeg -i {} -vf scale=${SIZE}:-1 -y min/{}"
+  local EXE3="ls | grep -E '.(jpg|png|jpeg)$' | xargs -I {} ffmpeg -i {} -vf scale=${SIZE}:-1 -y min/{}"
   echo $EXE3
   $(eval ${EXE3})
 
